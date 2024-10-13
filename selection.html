@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seleccionar Región</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        user-select: none;
+      }
+
+      .selection {
+        position: absolute;
+        border: 2px dashed #00f;
+        background-color: rgba(0, 0, 255, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      const { ipcRenderer } = require("electron");
+
+      let startX, startY, selectionDiv;
+
+      // Detectar clic inicial
+      window.addEventListener("mousedown", (e) => {
+        startX = e.clientX;
+        startY = e.clientY;
+
+        // Crear el div de selección
+        selectionDiv = document.createElement("div");
+        selectionDiv.className = "selection";
+        selectionDiv.style.left = `${startX}px`;
+        selectionDiv.style.top = `${startY}px`;
+        document.body.appendChild(selectionDiv);
+      });
+
+      // Ajustar el tamaño del área al mover el mouse
+      window.addEventListener("mousemove", (e) => {
+        if (!selectionDiv) return;
+
+        const width = e.clientX - startX;
+        const height = e.clientY - startY;
+
+        selectionDiv.style.width = `${Math.abs(width)}px`;
+        selectionDiv.style.height = `${Math.abs(height)}px`;
+
+        if (width < 0) selectionDiv.style.left = `${e.clientX}px`;
+        if (height < 0) selectionDiv.style.top = `${e.clientY}px`;
+      });
+
+      // Enviar la región seleccionada al soltar el mouse
+      window.addEventListener("mouseup", (e) => {
+        if (!selectionDiv) return;
+
+        const endX = e.clientX;
+        const endY = e.clientY;
+
+        const region = {
+          x: Math.min(startX, endX),
+          y: Math.min(startY, endY),
+          width: Math.abs(endX - startX),
+          height: Math.abs(endY - startY),
+        };
+
+        console.log("Región seleccionada:", region);
+
+        // Enviar la región seleccionada al proceso principal
+        ipcRenderer.send("region-selected", region);
+
+        // Eliminar el div de selección y cerrar la ventana
+        selectionDiv.remove();
+        window.close();
+      });
+    </script>
+  </body>
+</html>
